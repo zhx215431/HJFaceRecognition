@@ -1,4 +1,6 @@
 import tensorflow as tf
+import RGBSetBuilder
+from tensorflow.python import debug as tfdbg
 origin_image_length = 128
 M_L_1 = origin_image_length
 M_L_2 = origin_image_length//2
@@ -53,10 +55,16 @@ def neighborhoodDifference(base_tensor, target_tensor):
     result_k = tf.zeros([1,1,M_L_4,1,25])
     result_j = tf.zeros([1,M_L_4,M_L_4,1,25])
     result_i = tf.zeros([1,M_L_4,M_L_4,25,25])
-    for i in range(image_count):##第几张图片
-        for j in range(25):##第几个特征值
-            for k in range(M_L_4):##高度遍历
-                for l in range(M_L_4):##宽度遍历
+    for i in range(image_count):
+        ##第几张图片
+        print("开始处理第%d张图片" %(i))
+        for j in range(25):
+            ##第几个特征值
+            print("开始处理第%d个特征值" %(j))
+            for k in range(M_L_4):
+                ##高度遍历
+                for l in range(M_L_4):
+                    ##宽度遍历
                     base_matrix = tf.slice(base_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
                     target_matrix = tf.slice(target_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
                     base_matrix = tf.reshape(base_matrix,[M_L_4,M_L_4])
@@ -137,6 +145,7 @@ def block_targetMatrix_fillZero(target_matrix, x, y):
     matrix = tf.pad(target_matrix,[[2,2],[2,2]],"CONSTANT")
     result = tf.slice(matrix,[x,y],[5,5])
     result = tf.reshape(result,[25])
+    return result
 
 '''
 池化
@@ -156,6 +165,11 @@ def combineTensor(X,Y):
     combine = tf.concat([X,Y], 3)
     return combine
 
+builder = RGBSetBuilder.RGBSetBuilder()
+builder.decode_and_read()
+print(builder.image_count)
+print(builder.label_list)
+print(builder.training_label_list)
 sess = tf.InteractiveSession()
 
 '''
@@ -191,7 +205,7 @@ hx2_pool2 = max_pool(hx2_conv2,2)
 cross input neighborhood Differences
 2*[32*32*25] -> 2*[(32*5) * (32*5) * 25 ]
 '''
-x_y_neighborhoodDiff, y_x_neighborhoodDiff = cross_input_neighborhoodDifferences(X=hx1_pool2, Y=hx2_conv2)
+x_y_neighborhoodDiff, y_x_neighborhoodDiff = cross_input_neighborhoodDifferences(X=hx1_pool2, Y=hx2_pool2)
 x_y_conv1 = tf.nn.relu(x_y_neighborhoodDiff)
 y_x_conv1 = tf.nn.relu(y_x_neighborhoodDiff)
 
@@ -240,3 +254,22 @@ DROUP OUT
 W_fc2 = weight_variable([500,2])
 b_fc2 = bias_variable([2])
 y_conv = ft.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
+
+'''
+损失函数
+'''
+cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+'''
+训练模型&模型评估
+'''
+train_step = tf.train.AdamOptimizer(1e-2).minimize(cross_entropy)
+correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+sess.run(tf.global_variables_initializer())
+for i in range(20000):
+    print("start!!!!!!!!!!!!!!")
+    base,target,is_same = builder.RE_I_next_batch_image(training_count=50)
+    if i%5 == 0:
+        train_accuracy = accuracy.eval(feed_dict={x1:base, x2:target, y_:is_same})
+        print("step %d, training accuracy %g"%(i, train_accuracy))
+    train_step.run(feed_dict={x1:base, x2:target, y_:is_same})

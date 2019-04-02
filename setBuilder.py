@@ -63,6 +63,23 @@ class builder:
 #                os.system('pause')
                 whileCount = whileCount + 1
         return batch_image_list, batch_label_list
+
+#人脸重识别的随机抽取x个组合训练
+    def RE_I_next_batch_image(self, training_count):
+        base_image_list = []
+        target_image_list = []
+        is_same_list = []
+        for i in range(training_count):
+            rnd1 = np.random.randint(1,self.image_count)
+            rnd2 = np.random.randint(1,self.image_count)
+            base_image_list.append(self.training_image_list[rnd1 - 1])
+            target_image_list.append(self.training_image_list[rnd2 - 1])
+            if self.training_label_list[rnd1 - 1] == self.training_label_list[rnd2 - 1]:
+                is_same_list.append(1)
+            else:
+                is_same_list.append(0)
+        return base_image_list, target_image_list, is_same_list
+
 #随机抽选X个测试
     def test_batch_image(self, test_count):
         whileCount = 0

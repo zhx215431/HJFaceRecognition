@@ -1,5 +1,6 @@
 import tensorflow as tf
 import RGBSetBuilder
+from tensorflow.python import debug as tfdbg
 
 #权重初始化
 def weight_variable(shape):
@@ -28,6 +29,7 @@ print(builder.training_label_list)
 #能够在运行图的时候，插入一些计算图
 sess = tf.InteractiveSession()
 # sess = tf.Session() 需要在启动session之前构建整个计算图，然后启动该计算图
+sess = tfdbg.LocalCLIDebugWrapperSession(sess)
 
 '''
 占位符

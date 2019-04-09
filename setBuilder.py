@@ -75,9 +75,9 @@ class builder:
             base_image_list.append(self.training_image_list[rnd1 - 1])
             target_image_list.append(self.training_image_list[rnd2 - 1])
             if self.training_label_list[rnd1 - 1] == self.training_label_list[rnd2 - 1]:
-                is_same_list.append(1)
+                is_same_list.append(label_transformer(number=1,setrange=2))
             else:
-                is_same_list.append(0)
+                is_same_list.append(label_transformer(number=0,setrange=2))
         return base_image_list, target_image_list, is_same_list
 
 #随机抽选X个测试

@@ -6,32 +6,35 @@ M_L_1 = origin_image_length
 M_L_2 = origin_image_length//2
 M_L_4 = origin_image_length//4
 M_L_8 = origin_image_length//8
-image_count = 2### TODO:
+image_count = 50### TODO:
 '''
 权重初始化
 shape           权重形状
+name            node名称
 output          该形状的权重张量
 '''
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
+def weight_variable(shape,name):
+    initial = tf.truncated_normal(shape, stddev=0.1, name='weight_init')
+    return tf.Variable(initial,name=name)
 '''
 偏置初始化
 shape           偏置形状
+name            node名称
 output          该形状的偏置张量
 '''
-def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
+def bias_variable(shape,name):
+    initial = tf.constant(0.1, shape=shape, name = 'bias_init')
+    return tf.Variable(initial,name=name)
 '''
 卷积
 x               被积张量
 W               卷积核
 stride          卷积步长
+name            node名称
 output          结果张量
 '''
-def conv2d(x,W,stride):
-    return tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding='SAME')
+def conv2d(x,W,stride,name):
+    return tf.nn.conv2d(x, W, strides=[1, stride, stride, 1], padding='SAME',name=name)
 '''
 cross_input_neighborhoodDifferences
 X               输入张量1
@@ -49,97 +52,54 @@ target_tensor   需要与之比较的张量 = [-1,32,32,25] ,目标张量为原�
 output          输出比较结果张量 = [-1,32,32,25,25]
 '''
 def neighborhoodDifference_byCombine(base_tensor, target_tensor):
-    s = tf.constant(0).get_shape()
-    result_i = tf.zeros([1,M_L_4*5,M_L_4*5,25])
-    a,b,c,d,e,f,g= tf.while_loop(conv_i,body_i,[0,0,0,0,base_tensor,target_tensor,result_i],shape_invariants=[s,s,s,s,base_tensor.get_shape(),target_tensor.get_shape(),tf.TensorShape([None,None,None,None])])
-    #g.shape = [X,M_L_4*5,M_L_4*5,25]
-    return g
-'''
-    result_l = tf.zeros([1,1,1,1,25])
-    result_k = tf.zeros([1,1,M_L_4,1,25])
-    result_j = tf.zeros([1,M_L_4,M_L_4,1,25])
-    result_i = tf.zeros([1,M_L_4,M_L_4,25,25])
-    for i in range(image_count):
-        ##第几张图片
-        print("开始处理第%d张图片" %(i))
-        for j in range(25):
-            ##第几个特征值
-            print("开始处理第%d个特征值" %(j))
-            for k in range(M_L_4):
-                ##高度遍历
-                for l in range(M_L_4):
-                    ##宽度遍历
-                    base_matrix = tf.slice(base_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
-                    target_matrix = tf.slice(target_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
-                    base_matrix = tf.reshape(base_matrix,[M_L_4,M_L_4])
-                    target_matrix = tf.reshape(target_matrix,[M_L_4,M_L_4])
-                    block_value = block_neighborhoodDifference(base_matrix,target_matrix,l,k)#返回25个特征值
-                    block_value = tf.reshape(block_value,[1,1,1,1,25])
-                    result_l = tf.cond(l == 0, lambda: value(block_value), lambda: tf.concat([result_l, block_value],2))
-                result_k = tf.cond(k == 0, lambda: value(result_l), lambda: tf.concat([result_k,result_l],1))
-            result_j = tf.cond(j == 0, lambda: value(result_k), lambda: tf.concat([result_j,result_k],3))
-        result_i = tf.cond(i == 0, lambda:value(result_j), lambda: tf.concat([result_i,result_j],0))
-    return result_i
-'''
-def conv_i(i,j,k,l,base_tensor,target_tensor,result):
-    return i < image_count - 1
+    result = tf.zeros([1,5,5,1])
+    a,b,c,d,e,f,g = tf.while_loop(cond=cond_i,body=body_i,loop_vars=[0,0,0,0,result,base_tensor,target_tensor],shape_invariants=[sShape(),sShape(),sShape(),sShape(),tf.TensorShape([None,None,None,None]),base_tensor.get_shape(),target_tensor.get_shape()])
+    return e
 
-def body_i(i,j,k,l,base_tensor,target_tensor,result):
-    #result.shape = [n,M_L_4*5,M_L_4*5,25] n<X
-    s = tf.constant(0).get_shape()
-    result_j = tf.zeros([1,M_L_4*5,M_L_4*5,1])
-    a,b,c,d,e,f,g = tf.while_loop(conv_j,body_j,[i,j,k,l,base_tensor,target_tensor,result_j],shape_invariants=[s,s,s,s,base_tensor.get_shape(),target_tensor.get_shape(),tf.TensorShape([None,None,None,None])])
-    #g.shape = [1,M_L_4*5,M_L_4*5,25]
-    result = tf.cond(tf.cast(i == 0, tf.bool), lambda:value(g), lambda: tf.concat([result,g],0))
-    i = tf.add(1,i)
-    return a,b,c,d,base_tensor,target_tensor,result
+def cond_i(i,j,k,l,result,base_tensor, target_tensor):
+    return tf.less(i,image_count)
 
-def conv_j(i,j,k,l,base_tensor,target_tensor,result):
-    return j < 25 - 1
+def cond_j(i,j,k,l,result,base_tensor, target_tensor):
+    return tf.less(j,32)
 
-def body_j(i,j,k,l,base_tensor,target_tensor,result):
-    #result.shape = [1,M_L_4*5,M_L_4*5,n] n<25
-    s = tf.constant(0).get_shape()
-    result_k = tf.zeros([1,5,M_L_4*5,1])
-    a,b,c,d,e,f,g = tf.while_loop(conv_k,body_k,[i,j,0,l,base_tensor,target_tensor,result_k],shape_invariants=[s,s,s,s,base_tensor.get_shape(),target_tensor.get_shape(),tf.TensorShape([None,None,None,None])])
-    #g.shape = [1,M_L_4*5,M_L_4*5,1]
-    result = tf.cond(tf.cast(j == 0, tf.bool), lambda: value(g), lambda: tf.concat([result,g],3))
-    j = tf.add(1,j)
-    return a,b,c,d,base_tensor,target_tensor,result
+def cond_k(i,j,k,l,result,base_tensor, target_tensor):
+    return tf.less(k,32)
 
-def conv_k(i,j,k,l,base_tensor,target_tensor,result):
-    return k < M_L_4 - 1
+def cond_l(i,j,k,l,result,base_tensor, target_tensor):
+    return tf.less(l,25)
 
-def body_k(i,j,k,l,base_tensor,target_tensor,result):
-    #result.shape = [1,5*n,5*M_L_4,1] n<M_L_4
-    s = tf.constant(0).get_shape()
-    result_l = tf.zeros([1,5,5,1])
-    a,b,c,d,e,f,g = tf.while_loop(conv_l,body_l,[i,j,k,0,base_tensor,target_tensor,result_l],shape_invariants=[s,s,s,s,base_tensor.get_shape(),target_tensor.get_shape(),tf.TensorShape([None,None,None,None])])
-    #g.shape = [1,5,5*M_L_4,1]
-    result = tf.cond(tf.cast(k == 0, tf.bool), lambda: value(g), lambda: tf.concat([result,g],1))
+def body_i(i,j,k,l,result,base_tensor, target_tensor):
+    a,b,c,d,e,f,g = tf.while_loop(cond=cond_j,body=body_j,loop_vars=[i,0,k,l,result,base_tensor, target_tensor],shape_invariants=[sShape(),sShape(),sShape(),sShape(),tf.TensorShape([None,None,None,None]),base_tensor.get_shape(),target_tensor.get_shape()])
+    result = tf.cond(tf.cast(tf.equal(i,0), tf.bool), lambda:e, lambda: tf.concat([result,e],0))
+    i = tf.add(i,1)
+    return i,j,k,l,result,base_tensor, target_tensor
+
+def body_j(i,j,k,l,result,base_tensor, target_tensor):
+    a,b,c,d,e,f,g = tf.while_loop(cond=cond_k,body=body_k,loop_vars=[i,j,0,l,result,base_tensor, target_tensor],shape_invariants=[sShape(),sShape(),sShape(),sShape(),tf.TensorShape([None,None,None,None]),base_tensor.get_shape(),target_tensor.get_shape()])
+    result = tf.cond(tf.cast(tf.equal(j,0), tf.bool), lambda: e, lambda: tf.concat([result,e],1))
+    j = tf.add(j,1)
+    return i,j,k,l,result,base_tensor, target_tensor
+
+def body_k(i,j,k,l,result,base_tensor, target_tensor):
+    a,b,c,d,e,f,g = tf.while_loop(cond=cond_l,body=body_l,loop_vars=[i,j,k,0,result,base_tensor, target_tensor],shape_invariants=[sShape(),sShape(),sShape(),sShape(),tf.TensorShape([None,None,None,None]),base_tensor.get_shape(),target_tensor.get_shape()])
+    result = tf.cond(tf.cast(tf.equal(k,0), tf.bool), lambda: e, lambda: tf.concat([result,e],2))
     k = tf.add(k,1)
-    return a,b,c,d,base_tensor,target_tensor,result
+    return i,j,k,l,result,base_tensor, target_tensor
 
-def conv_l(i,j,k,l,base_tensor,target_tensor,result):
-    return l < M_L_4 - 1
-
-def body_l(i,j,k,l,base_tensor,target_tensor,result):
-    #result.shape = [1,5,5*n,1] n<M_L_4
-    base_matrix = tf.slice(base_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
-    target_matrix = tf.slice(target_tensor,[i,0,0,j],[1,M_L_4,M_L_4,1])
+def body_l(i,j,k,l,result,base_tensor, target_tensor):
+    base_matrix = tf.slice(base_tensor,[i,0,0,l],[1,M_L_4,M_L_4,1])
+    target_matrix = tf.slice(target_tensor,[i,0,0,l],[1,M_L_4,M_L_4,1])
     base_matrix = tf.reshape(base_matrix,[M_L_4,M_L_4])
     target_matrix = tf.reshape(target_matrix,[M_L_4,M_L_4])
-    block_value = block_neighborhoodDifference(base_matrix,target_matrix,l,k)#返回25个特征值
+    block_value = block_neighborhoodDifference(base_matrix,target_matrix,k,j)#返回25个特征值
     block_value = tf.reshape(block_value,[1,5,5,1])
-    result = tf.cond(tf.cast(l == 0, tf.bool), lambda: value(block_value), lambda: tf.concat([result, block_value],2))
+    #block_value = tf.ones([1,5,5,1])
+    result = tf.cond(tf.cast(tf.equal(l,0), tf.bool), lambda: block_value, lambda: tf.concat([result, block_value],3))
     l = tf.add(l,1)
-    return i,j,k,l,base_tensor,target_tensor,result
-'''
-value
-返回自己
-'''
-def value(x):
-    return x
+    return i,j,k,l,result,base_tensor, target_tensor
+
+def sShape():
+    return tf.constant(0).get_shape()
 '''
 neighborhoodDifference_bySubstitude
 通过替换来获得需要的张量
@@ -155,54 +115,48 @@ y               矩阵纵坐标
 output          [a,b....]共25个值
 '''
 def block_neighborhoodDifference(base_matrix, target_matrix, x, y):
-#    base_fillZero = block_baseMatrix_fillZero(base_matrix, x, y)
     base_not_fillZero = block_baseMatrix_not_fillZero(base_matrix, x, y)
     target_fillZero = block_targetMatrix_fillZero(target_matrix, x, y)
     base_not_fillZero = tf.reshape(base_not_fillZero,[25])
     target_fillZero = tf.reshape(target_fillZero,[25])
     result = tf.subtract(base_not_fillZero,target_fillZero)
     return result
-'''
-block_baseMatrix_fillZero
-base_matrix    基底矩阵 shape = [32,32]
-x              矩阵横坐标
-y              矩阵纵坐标
-output         f(x,y)l(5,5) 边界填零 (列表形式，25个值)
-'''
-def block_baseMatrix_fillZero(base_matrix, x, y):
-    result = tf.cond((x>=2 and x<=M_L_4-3) and (y>=2 and y<=M_L_4-3), block_baseMatrix_not_fillZero(base_matrix, x, y), lambda: block_baseMatrix_should_fillZero(base_matrix, x, y))
+
 '''
 block_baseMatrix_should_fillZero
+base_matrix   基底矩阵 shape = [32,32]
+x             矩阵横坐标
+y             矩阵纵坐标
+output        f(x,y)l(5,5) 边界填零 (列表形式，25个值)
 '''
 def block_baseMatrix_should_fillZero(base_matrix, x, y):
-    value = base_matrix[x][y]
+    value = base_matrix[y][x]
     matrix = tf.fill([32,32],value)
     matrix = tf.pad(matrix,[[2,2],[2,2]],"CONSTANT")#边界填零
-    result = tf.slice(matrix,[x,y],[5,5])
-    result = tf.reshape(result,[25])
+    result = tf.slice(matrix,[y,x],[5,5])
     return result
 '''
 block_baseMatrix_not_fillZero
 base_matrix    基底矩阵 shape = [32,32]
-x              矩阵横坐标
-y              矩阵纵坐标
+x              矩阵横坐标 0-31
+y              矩阵纵坐标 0-31
 output         f(x,y)l(5,5) 边界不填零 (列表形式，25个值)
 '''
 def block_baseMatrix_not_fillZero(base_matrix, x, y):
-    value = base_matrix[x][y]
+    value = base_matrix[y][x]
     result = tf.fill([25],value)
     return result
 
 '''
 block_targetMatrix_fillZero
 target_matrix  目标矩阵 shape = [32,32]
-x              矩阵横坐标
-y              矩阵纵坐标
+x              矩阵heng坐标 0-31
+y              矩阵zong坐标 0-31
 output         N[g(x,y)] 边界填零 (列表形式，25个值)
 '''
 def block_targetMatrix_fillZero(target_matrix, x, y):
     matrix = tf.pad(target_matrix,[[2,2],[2,2]],"CONSTANT")
-    result = tf.slice(matrix,[x,y],[5,5])
+    result = tf.slice(matrix,[y,x],[5,5])
     result = tf.reshape(result,[25])
     return result
 
@@ -210,10 +164,11 @@ def block_targetMatrix_fillZero(target_matrix, x, y):
 池化
 x               需要池化的张量
 poolSize        池化窗口宽度，池化步长
+name            node名称
 output          池化结果张量
 '''
-def max_pool(x,poolSize):
-    return tf.nn.max_pool(x, ksize=[1,poolSize,poolSize,1], strides=[1,poolSize,poolSize,1], padding='SAME')
+def max_pool(x,poolSize,name):
+    return tf.nn.max_pool(x, ksize=[1,poolSize,poolSize,1], strides=[1,poolSize,poolSize,1], padding='SAME',name=name)
 '''
 合并两个张量
 X              张量1,shape = [-1, 16, 16, 25]
@@ -230,36 +185,39 @@ print(builder.image_count)
 print(builder.label_list)
 print(builder.training_label_list)
 sess = tf.InteractiveSession()
-sess = tfdbg.LocalCLIDebugWrapperSession(sess)
 
 '''
 占位符
 '''
-x1 = tf.placeholder("float",shape=[None,M_L_1*M_L_1,3])
-x2 = tf.placeholder("float",shape=[None,M_L_1*M_L_1,3])
-y_ = tf.placeholder("float",shape=[None,2])
+x1 = tf.placeholder("float",shape=[None,M_L_1*M_L_1,3],name = 'x1')
+x2 = tf.placeholder("float",shape=[None,M_L_1*M_L_1,3],name = 'x2')
+y_ = tf.placeholder("float",shape=[None,2],name='y_')
 
 '''
 第一层卷积 128*128*3 -> 64*64*20
 '''
-W_conv1 = weight_variable([5,5,3,20])
-b_conv1 = bias_variable([20])
-x1_image = tf.reshape(x1,[-1,M_L_1,M_L_1,3])
-x2_image = tf.reshape(x2,[-1,M_L_1,M_L_1,3])
-hx1_conv1 = conv2d(x=x1_image, W=W_conv1, stride=1) + b_conv1
-hx2_conv1 = conv2d(x=x2_image, W=W_conv1, stride=1) + b_conv1
-hx1_pool1 = max_pool(hx1_conv1,2)
-hx2_pool1 = max_pool(hx2_conv1,2)
+W_conv1 = weight_variable([5,5,3,20],'W_conv1')
+b_conv1 = bias_variable([20],'b_conv1')
+x1_image = tf.reshape(x1,[-1,M_L_1,M_L_1,3],name='x1_image_reshape')
+x2_image = tf.reshape(x2,[-1,M_L_1,M_L_1,3],name='x2_image_reshape')
+hx1_conv1 = conv2d(x=x1_image, W=W_conv1, stride=1, name='hx1_conv1')
+hx2_conv1 = conv2d(x=x2_image, W=W_conv1, stride=1, name='hx2_conv1')
+hx1_conv1 = tf.add(hx1_conv1,b_conv1,name='hx1_conv1_bias')
+hx2_conv1 = tf.add(hx2_conv1,b_conv1,name='hx2_conv1_bias')
+hx1_pool1 = max_pool(hx1_conv1,2,'hx1_pool1')
+hx2_pool1 = max_pool(hx2_conv1,2,'hx2_pool1')
 
 '''
 第二层卷积 64*64*20 -> 32*32*25
 '''
-W_conv2 = weight_variable([5,5,20,25])
-b_conv2 = bias_variable([25])
-hx1_conv2 = conv2d(x=hx1_pool1, W=W_conv2, stride=1) + b_conv2
-hx2_conv2 = conv2d(x=hx2_pool1, W=W_conv2, stride=1) + b_conv2
-hx1_pool2 = max_pool(hx1_conv2,2)
-hx2_pool2 = max_pool(hx2_conv2,2)
+W_conv2 = weight_variable([5,5,20,25],'W_conv2')
+b_conv2 = bias_variable([25],'b_conv2')
+hx1_conv2 = conv2d(x=hx1_pool1, W=W_conv2, stride=1, name='hx1_conv2')
+hx2_conv2 = conv2d(x=hx2_pool1, W=W_conv2, stride=1, name='hx2_conv2')
+hx1_conv2 = tf.add(hx1_conv2,b_conv2,name='hx1_conv2_bias')
+hx2_conv2 = tf.add(hx2_conv2,b_conv2,name='hx2_conv2_bias')
+hx1_pool2 = max_pool(hx1_conv2,2,'hx1_pool2')
+hx2_pool2 = max_pool(hx2_conv2,2,'hx2_pool2')
 
 '''
 cross input neighborhood Differences
@@ -273,63 +231,77 @@ y_x_conv1 = tf.nn.relu(y_x_neighborhoodDiff)
 Patch Summary Features
 2*[(32*5) * (32*5) * 25] -> 2*[32*32*25]
 '''
-W_x_y_conv1 = weight_variable([5,5,25,25])
-W_y_x_conv1 = weight_variable([5,5,25,25])
-b_x_y_conv1 = bias_variable([25])
-b_y_x_conv1 = bias_variable([25])
-h_x_y_relu1 = tf.nn.relu(conv2d(x=x_y_conv1, W=W_x_y_conv1, stride=5) + b_x_y_conv1)
-h_y_x_relu1 = tf.nn.relu(conv2d(x=y_x_conv1, W=W_y_x_conv1, stride=5) + b_y_x_conv1)
+W_x_y_conv1 = weight_variable([5,5,25,25],'W_x_y_conv1')
+W_y_x_conv1 = weight_variable([5,5,25,25],'W_y_x_conv1')
+b_x_y_conv1 = bias_variable([25],'b_x_y_conv1')
+b_y_x_conv1 = bias_variable([25],'b_y_x_conv1')
+h_x_y_relu1 = tf.nn.relu(conv2d(x=x_y_conv1, W=W_x_y_conv1, stride=5, name='h_x_y_relu1') + b_x_y_conv1)
+h_y_x_relu1 = tf.nn.relu(conv2d(x=y_x_conv1, W=W_y_x_conv1, stride=5, name='h_y_x_relu1') + b_y_x_conv1)
 
 '''
 Across Patch Features
 2*[32*32*25] -> 2*[16*16*25]
 '''
-W_x_y_conv2 = weight_variable([3,3,25,25])
-W_y_x_conv2 = weight_variable([3,3,25,25])
-b_x_y_conv2 = bias_variable([25])
-b_y_x_conv2 = bias_variable([25])
-h_x_y_conv = conv2d(x=h_x_y_relu1, W=W_x_y_conv2, stride=1) + b_x_y_conv2
-h_y_x_conv = conv2d(x=h_y_x_relu1, W=W_y_x_conv2, stride=1) + b_y_x_conv2
-h_x_y_pool = max_pool(x=h_x_y_conv, poolSize=2)
-h_y_x_pool = max_pool(x=h_y_x_conv, poolSize=2)
+W_x_y_conv2 = weight_variable([3,3,25,25],'W_x_y_conv2')
+W_y_x_conv2 = weight_variable([3,3,25,25],'W_y_x_conv2')
+b_x_y_conv2 = bias_variable([25],'b_x_y_conv2')
+b_y_x_conv2 = bias_variable([25],'b_y_x_conv2')
+h_x_y_conv = conv2d(x=h_x_y_relu1, W=W_x_y_conv2, stride=1, name='h_x_y_conv') + b_x_y_conv2
+h_y_x_conv = conv2d(x=h_y_x_relu1, W=W_y_x_conv2, stride=1, name='h_y_x_conv') + b_y_x_conv2#[2,32,32,25]
+h_x_y_pool = max_pool(x=h_x_y_conv, poolSize=2, name='h_x_y_pool')
+h_y_x_pool = max_pool(x=h_y_x_conv, poolSize=2, name='h_y_x_pool')
 
 '''
 Higher-Order Relationships
 2*[16*16*25] -> [16*16*50] ->500
 '''
 combine_x_y = combineTensor(X=h_x_y_pool,Y=h_y_x_pool)
-combine_x_y_flat = tf.reshape(combine_x_y, [-1,M_L_8*M_L_8*50])
-W_fc1 = weight_variable([M_L_8*M_L_8*50, 500])
-b_fc1 = bias_variable([500])
+combine_x_y_flat = tf.reshape(combine_x_y, [-1,M_L_4*M_L_4*50])
+W_fc1 = weight_variable([M_L_4*M_L_4*50, 500],'W_fc1')
+b_fc1 = bias_variable([500],'b_fc1')
 h_fc1 = tf.nn.relu(tf.matmul(combine_x_y_flat, W_fc1) + b_fc1)
 
 '''
 DROUP OUT
-不知道要不要
+## TODO:
 '''
 '''
 输出层
 500 -> 2
 '''
-W_fc2 = weight_variable([500,2])
-b_fc2 = bias_variable([2])
-y_conv = tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
+W_fc2 = weight_variable([500,2],'W_fc2')
+b_fc2 = bias_variable([2],'b_fc2')
+y_conv = tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2, name = 'y_conv')
 
 '''
 损失函数
 '''
+## TODO:
+#y_conv = tf.slice(y_conv,[0,0],[50,2])
 cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
 '''
 训练模型&模型评估
 '''
-train_step = tf.train.AdamOptimizer(1e-2).minimize(cross_entropy)
+
+train_step = tf.train.AdamOptimizer(0.1).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
-for i in range(30):
+
+'''
+test
+'''
+#base,target,is_same = builder.RE_I_next_batch_image(training_count=2)
+sess = tfdbg.LocalCLIDebugWrapperSession(sess)
+#print(sess.run(h_y_x_pool,feed_dict={x1:base, x2:target, y_:is_same}))
+
+
+
+for i in range(300):
     print("start!!!!!!!!!!!!!!")
-    base,target,is_same = builder.RE_I_next_batch_image(training_count=2)
-    if i%5 == 0:
-        train_accuracy = accuracy.eval(feed_dict={x1:base, x2:target, y_:is_same})
-        print("step %d, training accuracy %g"%(i, train_accuracy))
+    base,target,is_same = builder.RE_I_next_batch_image(training_count=50)
+    if i%1 == 0:
+        train_cross_entropy = cross_entropy.eval(feed_dict={x1:base, x2:target, y_:is_same})
+        print("step %d, cross entropy: %g"%(i, train_cross_entropy))
+        #print(x_y_neighborhoodDiff.eval(feed_dict={x1:base, x2:target, y_:is_same}))
     train_step.run(feed_dict={x1:base, x2:target, y_:is_same})

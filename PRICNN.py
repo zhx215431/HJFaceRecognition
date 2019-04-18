@@ -47,9 +47,9 @@ def cross_input_neighborhoodDifferences(X,Y):
     return x_y, y_x
 '''
 neighborhoodDifferences_byCombine
-base_tensor     基底张量 shape = [-1,32,32,25] ,基底张量中的值只有0和x
-target_tensor   需要与之比较的张量 = [-1,32,32,25] ,目标张量为原张量的片段
-output          输出比较结果张量 = [-1,32,32,25,25]
+base_tensor     基底张量 shape = [-1,M_L_4,M_L_4,25] ,基底张量中的值只有0和x
+target_tensor   需要与之比较的张量 = [-1,M_L_4,M_L_4,25] ,目标张量为原张量的片段
+output          输出比较结果张量 = [-1,M_L_4*5,M_L_4*5,25]
 '''
 def neighborhoodDifference_byCombine(base_tensor, target_tensor):
     result = tf.zeros([1,5,5,1])
@@ -60,10 +60,10 @@ def cond_i(i,j,k,l,result,base_tensor, target_tensor):
     return tf.less(i,image_count)
 
 def cond_j(i,j,k,l,result,base_tensor, target_tensor):
-    return tf.less(j,32)
+    return tf.less(j,M_L_4)
 
 def cond_k(i,j,k,l,result,base_tensor, target_tensor):
-    return tf.less(k,32)
+    return tf.less(k,M_L_4)
 
 def cond_l(i,j,k,l,result,base_tensor, target_tensor):
     return tf.less(l,25)
@@ -108,8 +108,8 @@ def neighborhoodDifference_bySubstitude(base_tensor, target_tensor):
     pass
 '''
 block_neighborhoodDifference
-base_matrix     基底矩阵 shape = [32,32]
-target_matrix   需要与之比较的矩阵 shape = [32,32]
+base_matrix     基底矩阵 shape = [M_L_4,M_L_4]
+target_matrix   需要与之比较的矩阵 shape = [M_L_4,M_L_4]
 x               矩阵横坐标
 y               矩阵纵坐标
 output          [a,b....]共25个值
@@ -124,22 +124,22 @@ def block_neighborhoodDifference(base_matrix, target_matrix, x, y):
 
 '''
 block_baseMatrix_should_fillZero
-base_matrix   基底矩阵 shape = [32,32]
+base_matrix   基底矩阵 shape = [M_L_4,M_L_4]
 x             矩阵横坐标
 y             矩阵纵坐标
 output        f(x,y)l(5,5) 边界填零 (列表形式，25个值)
 '''
 def block_baseMatrix_should_fillZero(base_matrix, x, y):
     value = base_matrix[y][x]
-    matrix = tf.fill([32,32],value)
+    matrix = tf.fill([M_L_4,M_L_4],value)
     matrix = tf.pad(matrix,[[2,2],[2,2]],"CONSTANT")#边界填零
     result = tf.slice(matrix,[y,x],[5,5])
     return result
 '''
 block_baseMatrix_not_fillZero
-base_matrix    基底矩阵 shape = [32,32]
-x              矩阵横坐标 0-31
-y              矩阵纵坐标 0-31
+base_matrix    基底矩阵 shape = [M_L_4,M_L_4]
+x              矩阵横坐标
+y              矩阵纵坐标
 output         f(x,y)l(5,5) 边界不填零 (列表形式，25个值)
 '''
 def block_baseMatrix_not_fillZero(base_matrix, x, y):
@@ -149,9 +149,9 @@ def block_baseMatrix_not_fillZero(base_matrix, x, y):
 
 '''
 block_targetMatrix_fillZero
-target_matrix  目标矩阵 shape = [32,32]
-x              矩阵heng坐标 0-31
-y              矩阵zong坐标 0-31
+target_matrix  目标矩阵 shape = [M_L_4,M_L_4]
+x              矩阵heng坐标
+y              矩阵zong坐标
 output         N[g(x,y)] 边界填零 (列表形式，25个值)
 '''
 def block_targetMatrix_fillZero(target_matrix, x, y):
@@ -171,9 +171,9 @@ def max_pool(x,poolSize,name):
     return tf.nn.max_pool(x, ksize=[1,poolSize,poolSize,1], strides=[1,poolSize,poolSize,1], padding='SAME',name=name)
 '''
 合并两个张量
-X              张量1,shape = [-1, 16, 16, 25]
-Y              张量2,shape = [-1, 16, 16, 25]
-output         合并后的张量,shape = [-1 , 16, 16, 50]
+X              张量1,shape = [-1, M_L_8, M_L_8, 25]
+Y              张量2,shape = [-1, M_L_8, M_L_8, 25]
+output         合并后的张量,shape = [-1 , M_L_8, M_L_8, 50]
 '''
 def combineTensor(X,Y):
     combine = tf.concat([X,Y], 3)
@@ -194,7 +194,7 @@ x2 = tf.placeholder("float",shape=[None,M_L_1*M_L_1,3],name = 'x2')
 y_ = tf.placeholder("float",shape=[None,2],name='y_')
 
 '''
-第一层卷积 128*128*3 -> 64*64*20
+第一层卷积 M_L_1*M_L_1*3 -> M_L_2*M_L_2*20
 '''
 W_conv1 = weight_variable([5,5,3,20],'W_conv1')
 b_conv1 = bias_variable([20],'b_conv1')
@@ -208,7 +208,7 @@ hx1_pool1 = max_pool(hx1_conv1,2,'hx1_pool1')
 hx2_pool1 = max_pool(hx2_conv1,2,'hx2_pool1')
 
 '''
-第二层卷积 64*64*20 -> 32*32*25
+第二层卷积 M_L_2*M_L_2*20 -> M_L_4*M_L_4*25
 '''
 W_conv2 = weight_variable([5,5,20,25],'W_conv2')
 b_conv2 = bias_variable([25],'b_conv2')
@@ -221,7 +221,7 @@ hx2_pool2 = max_pool(hx2_conv2,2,'hx2_pool2')
 
 '''
 cross input neighborhood Differences
-2*[32*32*25] -> 2*[(32*5) * (32*5) * 25 ]
+2*[M_L_4*M_L_4*25] -> 2*[(M_L_4*5) * (M_L_4*5) * 25 ]
 '''
 x_y_neighborhoodDiff, y_x_neighborhoodDiff = cross_input_neighborhoodDifferences(X=hx1_pool2, Y=hx2_pool2)
 x_y_conv1 = tf.nn.relu(x_y_neighborhoodDiff)
@@ -229,7 +229,7 @@ y_x_conv1 = tf.nn.relu(y_x_neighborhoodDiff)
 
 '''
 Patch Summary Features
-2*[(32*5) * (32*5) * 25] -> 2*[32*32*25]
+2*[(M_L_4*5) * (M_L_4*5) * 25] -> 2*[M_L_4*M_L_4*25]
 '''
 W_x_y_conv1 = weight_variable([5,5,25,25],'W_x_y_conv1')
 W_y_x_conv1 = weight_variable([5,5,25,25],'W_y_x_conv1')
@@ -240,24 +240,24 @@ h_y_x_relu1 = tf.nn.relu(conv2d(x=y_x_conv1, W=W_y_x_conv1, stride=5, name='h_y_
 
 '''
 Across Patch Features
-2*[32*32*25] -> 2*[16*16*25]
+2*[M_L_4*M_L_4*25] -> 2*[M_L_8*M_L_8*25]
 '''
 W_x_y_conv2 = weight_variable([3,3,25,25],'W_x_y_conv2')
 W_y_x_conv2 = weight_variable([3,3,25,25],'W_y_x_conv2')
 b_x_y_conv2 = bias_variable([25],'b_x_y_conv2')
 b_y_x_conv2 = bias_variable([25],'b_y_x_conv2')
 h_x_y_conv = conv2d(x=h_x_y_relu1, W=W_x_y_conv2, stride=1, name='h_x_y_conv') + b_x_y_conv2
-h_y_x_conv = conv2d(x=h_y_x_relu1, W=W_y_x_conv2, stride=1, name='h_y_x_conv') + b_y_x_conv2#[2,32,32,25]
+h_y_x_conv = conv2d(x=h_y_x_relu1, W=W_y_x_conv2, stride=1, name='h_y_x_conv') + b_y_x_conv2#[2,M_L_4,M_L_4,25]
 h_x_y_pool = max_pool(x=h_x_y_conv, poolSize=2, name='h_x_y_pool')
 h_y_x_pool = max_pool(x=h_y_x_conv, poolSize=2, name='h_y_x_pool')
 
 '''
 Higher-Order Relationships
-2*[16*16*25] -> [16*16*50] ->500
+2*[M_L_8*M_L_8*25] -> [M_L_8*M_L_8*50] ->500
 '''
 combine_x_y = combineTensor(X=h_x_y_pool,Y=h_y_x_pool)
-combine_x_y_flat = tf.reshape(combine_x_y, [-1,M_L_4*M_L_4*50])
-W_fc1 = weight_variable([M_L_4*M_L_4*50, 500],'W_fc1')
+combine_x_y_flat = tf.reshape(combine_x_y, [-1,M_L_8*M_L_8*50])
+W_fc1 = weight_variable([M_L_8*M_L_8*50, 500],'W_fc1')
 b_fc1 = bias_variable([500],'b_fc1')
 h_fc1 = tf.nn.relu(tf.matmul(combine_x_y_flat, W_fc1) + b_fc1)
 
@@ -278,7 +278,7 @@ y_conv = tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2, name = 'y_conv')
 '''
 ## TODO:
 #y_conv = tf.slice(y_conv,[0,0],[50,2])
-cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+cross_entropy = -tf.reduce_sum(y_*tf.log(tf.clip_by_value(y_conv,1e-8,1.0)))
 '''
 训练模型&模型评估
 '''
@@ -289,7 +289,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
 
 '''
-test
+debug
 '''
 #base,target,is_same = builder.RE_I_next_batch_image(training_count=2)
 sess = tfdbg.LocalCLIDebugWrapperSession(sess)

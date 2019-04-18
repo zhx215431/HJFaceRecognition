@@ -94,13 +94,13 @@ y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 '''
 类别预测和损失函数
 '''
-cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))#损失函数为交叉熵
+cross_entropy = -tf.reduce_sum(y_*tf.log(tf.clip_by_value(y_conv,1e-8,1.0)))#损失函数为交叉熵
 
 
 '''
 训练模型&模型评估
 '''
-train_step = tf.train.AdamOptimizer(1e-2).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
@@ -109,6 +109,9 @@ for i in range(20000):
     if i%5 == 0:
         train_accuracy = accuracy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
         print("step %d, training accuracy %g"%(i, train_accuracy))
+        train_cross_entropy = cross_entropy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
+        print("step %d, cross entropy: %g"%(i, train_cross_entropy))
+
     train_step.run(feed_dict={x:batch_xs, y_:batch_ys, keep_prob: 0.5})
 test_xs, test_ys = builder.test_batch_image(test_count=100)
 print("test accuracy %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))

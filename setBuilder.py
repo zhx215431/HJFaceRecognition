@@ -62,7 +62,7 @@ class builder:
 #                t.show_tensor_to_image(tes)
 #                os.system('pause')
                 whileCount = whileCount + 1
-        return batch_image_list, batch_label_list
+        return batch_image_list, batch_label_list,random_list
 
 #人脸重识别的随机抽取x个组合训练
     def RE_I_next_batch_image(self, training_count):

@@ -41,5 +41,13 @@ base = tf.zeros([2,32,32,25])
 target = tf.ones([2,32,32,25])
 value = block_value(0,0,0,0,base,target)
 
+
+
+
+F = tf.constant([[1, 2], [3, 4]], dtype=tf.float32)
+G = tf.constant(3, dtype=tf.float32, shape=F.get_shape())
+
+
+D = tf.div(F,G)
 sess = tf.InteractiveSession()
-print(sess.run(value))
+print(sess.run(D))

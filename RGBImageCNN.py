@@ -1,6 +1,7 @@
 import tensorflow as tf
 import RGBSetBuilder
 from tensorflow.python import debug as tfdbg
+import os
 
 #权重初始化
 def weight_variable(shape):
@@ -25,6 +26,7 @@ builder.decode_and_read()
 print(builder.image_count)
 print(builder.label_list)
 print(builder.training_label_list)
+os.system("pause")
 
 #能够在运行图的时候，插入一些计算图
 sess = tf.InteractiveSession()
@@ -39,13 +41,18 @@ y_ = tf.placeholder("float",shape=[None,len(builder.label_list)])#占位符，�
 
 
 '''
+归一化，很重要
+'''
+x_image = tf.reshape(x, [-1, 64, 64, 3])
+x_nor_image = x_image / 255
+
+'''
 第一层卷积
 '''
 #-1表示缺省
 W_conv1 = weight_variable([4, 4, 3, 20])
 b_conv1 = bias_variable([20])
-x_image = tf.reshape(x, [-1, 64, 64, 3])
-h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
+h_conv1 = tf.nn.leaky_relu(conv2d(x_nor_image, W_conv1) + b_conv1)
 h_pool1 = max_pool_2x2(h_conv1)
 
 '''
@@ -53,31 +60,16 @@ h_pool1 = max_pool_2x2(h_conv1)
 '''
 W_conv2 = weight_variable([3, 3, 20, 40])
 b_conv2 = bias_variable([40])
-h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+h_conv2 = tf.nn.leaky_relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = max_pool_2x2(h_conv2)
 
 '''
-第三层卷积
-'''
-W_conv3 = weight_variable([3, 3, 40, 60])
-b_conv3 = bias_variable([60])
-h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
-h_pool3 = max_pool_2x2(h_conv3)
-
-'''
-第四层卷积
-'''
-W_conv4 = weight_variable([2, 2, 60, 80])
-b_conv4 = bias_variable([80])
-h_conv4 = tf.nn.relu(conv2d(h_pool3, W_conv4) + b_conv4)
-h_pool4 = max_pool_2x2(h_conv4)
-'''
 密集连接层
 '''
-W_fc1 = weight_variable([4 * 4 * 80, 1024])
+W_fc1 = weight_variable([16 * 16 * 40, 1024])
 b_fc1 = bias_variable([1024])
-h_pool4_flat = tf.reshape(h_pool4,[-1, 4 * 4 * 80])
-h_fc1 = tf.nn.relu(tf.matmul(h_pool4_flat, W_fc1) + b_fc1)
+h_pool2_flat = tf.reshape(h_pool2,[-1, 16 * 16 * 40])
+h_fc1 = tf.nn.leaky_relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 '''
 DROUP OUT
@@ -100,18 +92,18 @@ cross_entropy = -tf.reduce_sum(y_*tf.log(tf.clip_by_value(y_conv,1e-8,1.0)))#损
 '''
 训练模型&模型评估
 '''
-train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
 for i in range(20000):
-    batch_xs,batch_ys = builder.next_batch_image(training_count=50)
+    batch_xs,batch_ys,randomList = builder.next_batch_image(training_count=200)
     if i%5 == 0:
         train_accuracy = accuracy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
         print("step %d, training accuracy %g"%(i, train_accuracy))
         train_cross_entropy = cross_entropy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
         print("step %d, cross entropy: %g"%(i, train_cross_entropy))
 
-    train_step.run(feed_dict={x:batch_xs, y_:batch_ys, keep_prob: 0.5})
+    train_step.run(feed_dict={x:batch_xs, y_:batch_ys, keep_prob: 1.0})
 test_xs, test_ys = builder.test_batch_image(test_count=100)
 print("test accuracy %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))

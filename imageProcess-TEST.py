@@ -3,18 +3,22 @@ import grayImageProcessor
 import tensorflow as tf
 import PIL as Image
 import matplotlib.pyplot as plt
+import os
 #from torchvision import transforms
 
 #orig_picture = 'E:/study/DL/1(withLabel)'
 #gen_picture = 'E:/study/DL/1(withLabel)'
 orig_picture = 'E:/study/DL/1(test)'
 gen_picture = 'E:/study/DL/1(test)'
+orig_validation_picture = 'E:/study/DL/1(validation)'
+gen_validation_picture = 'E:/study/DL/1(validation)'
 
 
 #t = grayImageProcessor.GaryIP(orig_picture, gen_picture)
 t = RGBImageProcessor.RGBIP(orig_picture, gen_picture)
 print(t.classes)
 print(t.num_samples)
+os.system("pause")
 t.create_record()
 batch = t.read_and_decode()
 init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())

@@ -5,10 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-#orig_picture = 'E:/study/DL/1(withLabel)'
-#gen_picture = 'E:/study/DL/1(withLabel)'
-orig_picture = 'E:/study/DL/1(test)'
-gen_picture = 'E:/study/DL/1(test)'
 
 #将数字转换成向量 如1->(0,1,0,....,0),4->(0,0,0,0,1,0,0,...,0)
 def label_transformer(number, setrange):
@@ -30,6 +26,7 @@ class builder:
     '''
     def datapath(self):
         data_path = '子类重写'
+
     def __init__(self):
         self.training_image_list = []
         self.training_label_list = []
@@ -42,12 +39,12 @@ class builder:
         print("子类重写")
 
 #随机抽选X个训练
-    def next_batch_image(self, training_count):
+    def next_batch_image(self, batch_count):
         whileCount = 0
         random_list = []
         batch_image_list = []
         batch_label_list = []
-        while (whileCount < training_count):
+        while (whileCount < batch_count):
             rnd = np.random.randint(1,self.image_count)
             if rnd not in random_list:
                 random_list.append(rnd)
@@ -79,18 +76,3 @@ class builder:
             else:
                 is_same_list.append(label_transformer(number=0,setrange=2))
         return base_image_list, target_image_list, is_same_list
-
-#随机抽选X个测试
-    def test_batch_image(self, test_count):
-        whileCount = 0
-        random_list = []
-        batch_image_list = []
-        batch_label_list = []
-        while (whileCount < test_count):
-            rnd = np.random.randint(1,self.image_count)
-            if rnd not in random_list:
-                random_list.append(rnd)
-                batch_image_list.append(self.training_image_list[rnd - 1])
-                batch_label_list.append(self.training_label_list[rnd - 1])
-                whileCount = whileCount + 1
-                return batch_image_list, batch_label_list

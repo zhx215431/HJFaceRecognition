@@ -21,11 +21,27 @@ def conv2d(x,W):
 def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
-builder = RGBSetBuilder.RGBSetBuilder()
-builder.decode_and_read()
-print(builder.image_count)
-print(builder.label_list)
-print(builder.training_label_list)
+trainBuilder = RGBSetBuilder.trainBuilder()
+trainBuilder.decode_and_read()
+print("trian")
+print(trainBuilder.image_count)
+print(trainBuilder.label_list)
+print(trainBuilder.training_label_list)
+
+validationBuilder = RGBSetBuilder.validationBuilder()
+validationBuilder.decode_and_read()
+print("validation")
+print(validationBuilder.image_count)
+print(validationBuilder.label_list)
+print(validationBuilder.training_label_list)
+
+testBuilder = RGBSetBuilder.testBuilder()
+testBuilder.decode_and_read()
+print("test")
+print(testBuilder.image_count)
+print(testBuilder.label_list)
+print(trainBuilder.training_label_list)
+
 os.system("pause")
 
 #能够在运行图的时候，插入一些计算图
@@ -37,7 +53,7 @@ sess = tfdbg.LocalCLIDebugWrapperSession(sess)
 占位符
 '''
 x = tf.placeholder("float",shape=[None,64*64,3])
-y_ = tf.placeholder("float",shape=[None,len(builder.label_list)])#占位符，其具体值由某一次具体计算决定
+y_ = tf.placeholder("float",shape=[None,len(trainBuilder.label_list)])#占位符，其具体值由某一次具体计算决定
 
 
 '''
@@ -80,8 +96,8 @@ h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 '''
 输出层
 '''
-W_fc2 = weight_variable([1024, len(builder.label_list)])
-b_fc2 = bias_variable([len(builder.label_list)])
+W_fc2 = weight_variable([1024, len(trainBuilder.label_list)])
+b_fc2 = bias_variable([len(trainBuilder.label_list)])
 y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 '''
 类别预测和损失函数
@@ -97,13 +113,20 @@ correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
 for i in range(20000):
-    batch_xs,batch_ys,randomList = builder.next_batch_image(training_count=200)
+    batch_train_xs,batch_train_ys,train_randomList = trainBuilder.next_batch_image(batch_count=200)
+    batch_validation_xs,batch_validation_ys,validation_randomList = validationBuilder.next_batch_image(batch_count=200)
     if i%5 == 0:
-        train_accuracy = accuracy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
-        print("step %d, training accuracy %g"%(i, train_accuracy))
-        train_cross_entropy = cross_entropy.eval(feed_dict={x:batch_xs, y_:batch_ys, keep_prob:1.0})
-        print("step %d, cross entropy: %g"%(i, train_cross_entropy))
+        train_accuracy = accuracy.eval(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob:1.0})
+        print("step %d, 训练集准确率 %g"%(i, train_accuracy))
+        train_cross_entropy = cross_entropy.eval(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob:1.0})
+        print("step %d, 训练集交叉熵 %g"%(i, train_cross_entropy))
 
-    train_step.run(feed_dict={x:batch_xs, y_:batch_ys, keep_prob: 1.0})
-test_xs, test_ys = builder.test_batch_image(test_count=100)
-print("test accuracy %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))
+        validation_accuracy = accuracy.eval(feed_dict={x:batch_validation_xs, y_:batch_validation_ys, keep_prob:1.0})
+        print("step %d, 验证集准确率 %g"%(i, validation_accuracy))
+        validation_cross_entropy = cross_entropy.eval(feed_dict={x:batch_validation_xs, y_:batch_validation_ys, keep_prob:1.0})
+        print("step %d, 验证集交叉熵 %g"%(i, validation_cross_entropy))
+        print("---------------------------------")
+
+    train_step.run(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob: 1.0})
+test_xs, test_ys, test_randomList = testBuilder.next_batch_image(batch_count=100)
+print("测试集准确率 %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))

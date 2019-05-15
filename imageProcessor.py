@@ -13,10 +13,6 @@ class IP:
     @param filename 生成二进制文件的名称
     @param length 图片缩放后的长度
     '''
-    def Recordfilename(self):
-        filename = "子类重写"
-        return filename
-
 #参数设定
     def read_image(self):
         for parent, dirnames, filenames in os.walk(self.orig_picture):
@@ -27,13 +23,13 @@ class IP:
                 self.num_samples = self.num_samples + 1
 
 #初始化@param classes, @param num_samples
-    def __init__(self, orig_picture, gen_picture):
+    def __init__(self, orig_picture, gen_picture, RecordFileName):
         self.orig_picture = orig_picture
         self.gen_picture = gen_picture
         self.classes = []
         self.num_samples = 0
         self.imageLength = 64
-        self.filename = self.Recordfilename()
+        self.filename = RecordFileName
         self.read_image()
 #展示图片
     def show_image(self, path):

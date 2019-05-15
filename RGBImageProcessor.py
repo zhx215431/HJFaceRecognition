@@ -6,9 +6,6 @@ from PIL import Image
 import numpy as np
 
 class RGBIP(imageProcessor.IP):
-    def Recordfilename(self):
-        filename = "RGBImage.tfrecords"
-        return filename
 #将原始的训练集编码生成二进制文件
     def create_record(self):
         writer = tf.python_io.TFRecordWriter(self.filename)

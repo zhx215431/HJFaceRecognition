@@ -27,6 +27,7 @@ print("trian")
 print(trainBuilder.image_count)
 print(trainBuilder.label_list)
 print(trainBuilder.training_label_list)
+print(trainBuilder.count_label)
 
 validationBuilder = RGBSetBuilder.validationBuilder()
 validationBuilder.decode_and_read()
@@ -34,6 +35,7 @@ print("validation")
 print(validationBuilder.image_count)
 print(validationBuilder.label_list)
 print(validationBuilder.training_label_list)
+print(trainBuilder.count_label)
 
 testBuilder = RGBSetBuilder.testBuilder()
 testBuilder.decode_and_read()
@@ -41,6 +43,7 @@ print("test")
 print(testBuilder.image_count)
 print(testBuilder.label_list)
 print(trainBuilder.training_label_list)
+print(trainBuilder.count_label)
 
 os.system("pause")
 
@@ -113,8 +116,8 @@ correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
 for i in range(20000):
-    batch_train_xs,batch_train_ys,train_randomList = trainBuilder.next_batch_image(batch_count=200)
-    batch_validation_xs,batch_validation_ys,validation_randomList = validationBuilder.next_batch_image(batch_count=200)
+    batch_train_xs,batch_train_ys,train_randomList = trainBuilder.fair_next_batch_image(batch_count=200)
+    batch_validation_xs,batch_validation_ys,validation_randomList = validationBuilder.fair_next_batch_image(batch_count=100)
     if i%5 == 0:
         train_accuracy = accuracy.eval(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob:1.0})
         print("step %d, 训练集准确率 %g"%(i, train_accuracy))
@@ -128,5 +131,5 @@ for i in range(20000):
         print("---------------------------------")
 
     train_step.run(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob: 1.0})
-test_xs, test_ys, test_randomList = testBuilder.next_batch_image(batch_count=100)
+test_xs, test_ys, test_randomList = testBuilder.fair_next_batch_image(batch_count=100)
 print("测试集准确率 %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))

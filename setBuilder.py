@@ -4,6 +4,7 @@ import PIL as Image
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import random
 
 
 #将数字转换成向量 如1->(0,1,0,....,0),4->(0,0,0,0,1,0,0,...,0)
@@ -34,6 +35,8 @@ class builder:
         self.image_count = 0
         self.data_path = self.datapath()
 
+        self.count_label = []#[1,2,2,2,3,3,4,5,5,5,5] 的count_label = [0,0,1,3,4,5,6,6,7,10]
+
 #将训练集读入内存
     def decode_and_read(self):
         print("子类重写")
@@ -60,6 +63,21 @@ class builder:
 #                os.system('pause')
                 whileCount = whileCount + 1
         return batch_image_list, batch_label_list,random_list
+
+#公平抽选X个训练或测试或验证（每一个class被抽选的概率是一样的）
+    def fair_next_batch_image(self, batch_count):
+        batch_image_list = []
+        batch_label_list = []
+        random_class_list = []
+        for i in range(batch_count):
+            class_number = random.randint(0,len(self.label_list)-1)
+            startPoint = self.count_label[class_number * 2]
+            endPoint = self.count_label[class_number * 2 + 1]
+            image_index = random.randint(startPoint,endPoint)
+            batch_image_list.append(self.training_image_list[image_index])
+            batch_label_list.append(label_transformer(number=self.training_label_list[image_index],setrange=len(self.label_list)))
+            random_class_list.append(class_number)
+        return batch_image_list,batch_label_list,random_class_list
 
 #人脸重识别的随机抽取x个组合训练
     def RE_I_next_batch_image(self, training_count):

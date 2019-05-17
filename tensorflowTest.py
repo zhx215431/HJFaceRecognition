@@ -1,5 +1,7 @@
 #import tensorflowWhileLoop
 import tensorflow as tf
+import RGBSetBuilder
+
 origin_image_length = 64
 M_L_1 = origin_image_length
 M_L_2 = origin_image_length//2
@@ -37,17 +39,12 @@ def block_targetMatrix_fillZero(target_matrix, x, y):
     result = tf.reshape(result,[25])
     return result
 
-base = tf.zeros([2,32,32,25])
-target = tf.ones([2,32,32,25])
-value = block_value(0,0,0,0,base,target)
+list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
-
-
-
-F = tf.constant([[1, 2], [3, 4]], dtype=tf.float32)
-G = tf.constant(3, dtype=tf.float32, shape=F.get_shape())
-
-
-D = tf.div(F,G)
-sess = tf.InteractiveSession()
-print(sess.run(D))
+trainBuilder = RGBSetBuilder.trainBuilder()
+trainBuilder.decode_and_read()
+for i in range(10000):
+    batch_image_list,batch_label_list,random_list = trainBuilder.fair_next_batch_image(batch_count=10)
+    for i in random_list:
+        list[i] = list[i] + 1
+print(list)

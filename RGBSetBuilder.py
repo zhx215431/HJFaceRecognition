@@ -17,6 +17,26 @@ orig_validation_picture = 'E:/study/DL/1(validation)'
 gen_validation_picture = 'E:/study/DL/1(validation)'
 validation_fileName = "RGBImage_validation.tfrecords"
 
+def make_count_label(input_list):
+    count_label = []
+    current_number = -9999
+    whileCount = 0
+    while(whileCount < len(input_list)):
+        if (current_number != input_list[whileCount]):
+            if whileCount == 0:
+                count_label.append(0)
+            else:
+                count_label.append(whileCount-1)
+                count_label.append(whileCount)
+
+        current_number = input_list[whileCount]
+
+        if whileCount == len(input_list) - 1:
+            count_label.append(whileCount)
+        whileCount = whileCount + 1
+
+    return count_label
+
 
 class trainBuilder(setBuilder.builder):
     def datapath(self):
@@ -43,6 +63,7 @@ class trainBuilder(setBuilder.builder):
             coord.request_stop()
             coord.join(therads)
             sess.close()
+        self.count_label = make_count_label(self.training_label_list)
 
 
 
@@ -71,6 +92,7 @@ class testBuilder(setBuilder.builder):
             coord.request_stop()
             coord.join(therads)
             sess.close()
+        self.count_label = make_count_label(self.training_label_list)
 
 
 
@@ -99,3 +121,4 @@ class validationBuilder(setBuilder.builder):
             coord.request_stop()
             coord.join(therads)
             sess.close()
+        self.count_label = make_count_label(self.training_label_list)

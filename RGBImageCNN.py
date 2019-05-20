@@ -2,6 +2,12 @@ import tensorflow as tf
 import RGBSetBuilder
 from tensorflow.python import debug as tfdbg
 import os
+import Excel_Write
+
+excelFilePath = 'E:/study/DL/HJFaceRecognition/project/ExcelR&W/test.xls'
+train_batch_count = 200
+validation_batch_count = 100
+test_batch_count = 100
 
 #权重初始化
 def weight_variable(shape):
@@ -115,21 +121,25 @@ train_step = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
+write = Excel_Write.write(excelFilePath,0)
 for i in range(20000):
-    batch_train_xs,batch_train_ys,train_randomList = trainBuilder.fair_next_batch_image(batch_count=200)
-    batch_validation_xs,batch_validation_ys,validation_randomList = validationBuilder.fair_next_batch_image(batch_count=100)
+    batch_train_xs,batch_train_ys,train_randomList = trainBuilder.fair_next_batch_image(batch_count=train_batch_count)
+    batch_validation_xs,batch_validation_ys,validation_randomList = validationBuilder.fair_next_batch_image(batch_count=validation_batch_count)
     if i%5 == 0:
         train_accuracy = accuracy.eval(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob:1.0})
         print("step %d, 训练集准确率 %g"%(i, train_accuracy))
         train_cross_entropy = cross_entropy.eval(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob:1.0})
+        train_cross_entropy = train_cross_entropy / train_batch_count
         print("step %d, 训练集交叉熵 %g"%(i, train_cross_entropy))
 
         validation_accuracy = accuracy.eval(feed_dict={x:batch_validation_xs, y_:batch_validation_ys, keep_prob:1.0})
         print("step %d, 验证集准确率 %g"%(i, validation_accuracy))
         validation_cross_entropy = cross_entropy.eval(feed_dict={x:batch_validation_xs, y_:batch_validation_ys, keep_prob:1.0})
+        validation_cross_entropy = validation_cross_entropy / validation_batch_count
         print("step %d, 验证集交叉熵 %g"%(i, validation_cross_entropy))
         print("---------------------------------")
+        write.write_append(int(i/5 + 1),train_accuracy,train_cross_entropy,validation_accuracy,validation_cross_entropy)
 
     train_step.run(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob: 1.0})
-test_xs, test_ys, test_randomList = testBuilder.fair_next_batch_image(batch_count=100)
+test_xs, test_ys, test_randomList = testBuilder.fair_next_batch_image(batch_count=test_batch_count)
 print("测试集准确率 %g"%accuracy.eval(feed_dict={x:test_xs, y_:test_ys, keep_prob: 1.0}))

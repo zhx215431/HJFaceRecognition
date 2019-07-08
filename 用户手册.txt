@@ -1,0 +1,12 @@
+1.在既定的路径中按照要求放入需要训练以及验证测试的图片文件
+2.生成训练用文件RGBImage_train.tfrecords(python imageProcessTestForTrain.py)
+  生成验证用文件RGBImage_validation.tfrecords(python imageProcessTestForValidation.py)
+  生成验证用文件（高频）RGBImage_train_high.tfrecords(python imageProcessTestForTrain_high.py)[注 这里py文件名中trian写错了]
+  生成验证用文件（中频）RGBImage_train_middle.tfrecords(python imageProcessTestForTrain_middle.py)[注 这里py文件名中trian写错了]
+  生成验证用文件（低频）RGBImage_train_low.tfrecords(python imageProcessTestForTrain_low.py)[注 这里py文件名中trian写错了]
+3.调整RGBImageCNN.py中参数， python RGBImageCNN.py，生成model.pb
+4.python PBtransform.py 从model.pb中抓取数据生成新的网络，生辰model1.pb
+5.在cmd中（win + r）py -3 tfcoremltest.py 生成modelTest3.mlmodel
+
+
+注 setBuilder中classCount需要修改

@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import os
 #from torchvision import transforms
 
-orig_picture = 'E:/study/DL/1(train)'
-gen_picture = 'E:/study/DL/1(train)'
+orig_picture = 'E:/study/DL/1.2(train)'
+gen_picture = 'E:/study/DL/1.2(train)'
 RecordFileName = "RGBImage_train.tfrecords"
 
 #t = grayImageProcessor.GaryIP(orig_picture, gen_picture)

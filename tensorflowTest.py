@@ -41,5 +41,11 @@ def block_targetMatrix_fillZero(target_matrix, x, y):
     result = tf.reshape(result,[25])
     return result
 
-Excel_Read.translation_accuracy()
-Excel_Read.translation_cross_entropy()
+#Excel_Read.translation_accuracy()
+#Excel_Read.translation_cross_entropy()
+
+
+a = [[[1,2,],[3,4]],[[5,6],[7,8]],[[9,0],[1,2]]]
+t = tf.shape(a)
+sess = tf.Session()
+print(sess.run(t))

@@ -8,7 +8,11 @@ excelFilePath = 'E:/study/DL/HJFaceRecognition/project/ExcelR&W/test.xls'
 
 def translation_accuracy():
     data = xlrd.open_workbook(excelFilePath)
-    table = data.sheets()[0]
+
+
+    table = data.sheets()[4]
+
+
     rows = table.nrows
     train_accuracy_list = []
     validation_accuracy_list = []
@@ -32,7 +36,11 @@ def translation_accuracy():
 
 def translation_cross_entropy():
     data = xlrd.open_workbook(excelFilePath)
-    table = data.sheets()[0]
+
+
+    table = data.sheets()[4]
+
+
     rows = table.nrows
     train_cross_entropy_list = []
     validation_cross_entropy_list = []
@@ -53,3 +61,9 @@ def translation_cross_entropy():
     plt.xlabel('time')
     plt.ylabel('cross entropy')
     plt.show()
+
+def translation_accuracy_ex():
+    pass
+
+def translation_cross_entropy_ex():
+    pass

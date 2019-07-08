@@ -6,6 +6,8 @@ import numpy as np
 import os
 import random
 
+classCount = 10
+
 
 #将数字转换成向量 如1->(0,1,0,....,0),4->(0,0,0,0,1,0,0,...,0)
 def label_transformer(number, setrange):
@@ -69,13 +71,14 @@ class builder:
         batch_image_list = []
         batch_label_list = []
         random_class_list = []
+        print()
         for i in range(batch_count):
             class_number = random.randint(0,len(self.label_list)-1)
             startPoint = self.count_label[class_number * 2]
             endPoint = self.count_label[class_number * 2 + 1]
             image_index = random.randint(startPoint,endPoint)
             batch_image_list.append(self.training_image_list[image_index])
-            batch_label_list.append(label_transformer(number=self.training_label_list[image_index],setrange=len(self.label_list)))
+            batch_label_list.append(label_transformer(number=self.training_label_list[image_index],setrange=classCount))
             random_class_list.append(class_number)
         return batch_image_list,batch_label_list,random_class_list
 

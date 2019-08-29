@@ -186,7 +186,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess.run(tf.global_variables_initializer())
 
 
-write = Excel_Write.write(excelFilePath,4)
+write = Excel_Write.write(excelFilePath,5)
 
 
 for i in range(5000):
@@ -229,7 +229,7 @@ for i in range(5000):
         #train_low_cross_entropy = train_low_cross_entropy / 30
         #print("step %d, 验证集低频部分交叉熵 %g"%(i, train_low_cross_entropy))
         #print("---------------------------------")
-        #write.write_append(int(i/5 + 1),train_accuracy,train_cross_entropy,validation_accuracy,validation_cross_entropy)
+        write.write_append(int(i/5 + 1),train_accuracy,train_cross_entropy,validation_accuracy,validation_cross_entropy)
         #write.write_exappend(int(i/5 + 1),train_high_accuracy,train_high_cross_entropy,train_middle_accuracy,train_middle_cross_entropy,train_low_accuracy,train_low_cross_entropy)
     train_step.run(feed_dict={x:batch_train_xs, y_:batch_train_ys, keep_prob: 0.8})
 #test_xs, test_ys, test_randomList = testBuilder.fair_next_batch_image(batch_count=test_batch_count)

@@ -10,7 +10,7 @@ def translation_accuracy():
     data = xlrd.open_workbook(excelFilePath)
 
 
-    table = data.sheets()[4]
+    table = data.sheets()[5]
 
 
     rows = table.nrows
@@ -38,7 +38,7 @@ def translation_cross_entropy():
     data = xlrd.open_workbook(excelFilePath)
 
 
-    table = data.sheets()[4]
+    table = data.sheets()[5]
 
 
     rows = table.nrows

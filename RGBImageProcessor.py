@@ -15,8 +15,18 @@ class RGBIP(imageProcessor.IP):
                 img_path = class_path + img_name
                 img = Image.open(img_path)
                 img = img.resize((self.imageLength,self.imageLength))#转换图片大小
+
+
                 img_raw = img.tobytes()#转化为原生bytes
-                print(index, "\n", img_raw)
+
+                #img_raw = np.array(img)
+                #img_min = img_raw.min()
+                #img_max = img_raw.max()
+                #img_raw = (img_raw - img_min)/(img_max - img_min)
+                #print(index, "\n", img_raw)
+                #img_raw = bytes(img_raw)
+
+
                 example = tf.train.Example(
                     features = tf.train.Features(feature={
                         'label': tf.train.Feature(int64_list = tf.train.Int64List(value = [index])),

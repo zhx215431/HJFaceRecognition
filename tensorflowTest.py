@@ -3,6 +3,11 @@ import tensorflow as tf
 import RGBSetBuilder
 import Excel_Write
 import Excel_Read
+from tensorflow.python.framework import graph_util
+from tensorflow.python.platform import gfile
+import matplotlib.pyplot as plt
+
+data_path = 'E:/study/DL/HJFaceRecognition/project/InceptionModel.pb'
 
 origin_image_length = 64
 M_L_1 = origin_image_length
@@ -41,11 +46,5 @@ def block_targetMatrix_fillZero(target_matrix, x, y):
     result = tf.reshape(result,[25])
     return result
 
-#Excel_Read.translation_accuracy()
-#Excel_Read.translation_cross_entropy()
-
-
-a = [[[1,2,],[3,4]],[[5,6],[7,8]],[[9,0],[1,2]]]
-t = tf.shape(a)
-sess = tf.Session()
-print(sess.run(t))
+Excel_Read.translation_accuracy()
+Excel_Read.translation_cross_entropy()
